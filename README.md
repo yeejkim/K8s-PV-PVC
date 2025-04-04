@@ -1,32 +1,43 @@
 <img src="https://capsule-render.vercel.app/api?type=waving&color=00C3FF&height=150&section=header" width="1000" />
 
 <div align="center">
-<h1 style="font-size: 36px;"> 💝 Kubernetes PV & PVC 설계 </h1>
+<h1 style="font-size: 36px;"> 💝 Kubernetes PV & PVC 설계 및 검증 </h1>
 </div>
+<p align="center">
+  <i>컨테이너 환경에서 데이터를 안전하고 지속적으로 관리하기 위한 스토리지 설계 실습</i>
+</p>
+
 </br>
 
-- 이 레포지토리는 Kubernetes 환경에서 PersistentVolume(PV)과 PersistentVolumeClaim(PVC)를 활용하여 컨테이너의 데이터를 영속적으로 관리하는 실습 과정을 기록한 공간입니다.
-- BusyBox 컨테이너를 통해 특정 디렉터리에 데이터를 기록하고, Pod 삭제 후에도 데이터가 유지되는지 검증하는 과정을 포함합니다.
+## 🎯 프로젝트 개요
 
-# 📌 목표 
-1. `busybox` 컨테이너 실행
-2. 특정 디렉터리에 파일 작성
-3. PV에도 데이터 저장
-4. Pod가 삭제되어도 데이터가 유지되는지 검증
+- 이 프로젝트는 Kubernetes 환경에서 **PersistentVolume(PV)** 와 **PersistentVolumeClaim(PVC)** 를 활용해,  
+**Pod 재시작 혹은 삭제 이후에도 데이터가 유지되는지**를 실습하고 확인하는 데 목적이 있습니다.
+
+- 데이터가 **컨테이너 내부가 아닌 외부의 물리 디스크에 안전하게 저장되는 방식**을 이해하고,  
+PV/PVC가 어떻게 작동하는지에 대한 개념을 실습을 통해 명확히 합니다.
+
+<br>
+
+## 🛠 실습 구성 흐름
+
+1. `busybox` 컨테이너를 활용한 Pod 생성
+2. Pod 내부 `/data` 디렉토리에 텍스트 파일 작성
+3. 해당 디렉토리를 PVC로 마운트하여 PV에 저장
+4. Pod를 삭제 후 재생성하여 데이터가 유지되는지 검증
+
+<br>
 
 
-
-# ✏️ 관련 개념 
+## ✏️ 주요 개념
 
 | 구성 요소 | 설명 |
-| --- | --- |
-| 📦 PV (PersistentVolume) | 클러스터에 있는 실제 저장 공간 (노드의 디스크, NFS 등) |
-| 📑 PVC (PersistentVolumeClaim) | Pod가 필요로 하는 저장 공간을 요청 (요청서) |
-| 🐚 Pod | PVC를 통해 실제 PV에 마운트된 볼륨 사용 |
+| -------- | ---- |
+| 📦 **PV (PersistentVolume)** | 클러스터에 존재하는 실제 저장 장치 (Node의 디스크, NFS 등) |
+| 📑 **PVC (PersistentVolumeClaim)** | Pod가 필요로 하는 저장 공간 요청 (요청서 역할) |
+| 🐚 **Pod** | PVC를 통해 실제 PV에 마운트된 디렉터리를 사용하는 컨테이너 |
 
-
-
-# 🧬 수행 과정 
+<br>
 
 
 ## 🗂️ 파일 구성
@@ -97,8 +108,9 @@ spec:
   ```
 </details>
 
+<br>
 
-
+## ⚙️ 실습 과정
 
 ## 1️⃣ Busy Box 설치 
 - Docker를 사용하여 BusyBox 이미지 다운로드 진행
@@ -107,6 +119,7 @@ spec:
   $docker pull busybox
   ```
 
+<br>
 
 ## 2️⃣ 리소스 적용 
 - 위 YAML 파일 저장 후, 해당 디렉토리에서 명령어 실행 
@@ -120,6 +133,7 @@ $kubectl apply -f pvc.yaml
 $kubectl apply -f pod.yaml
 ```
 
+<br>
 
 ## 3️⃣ 검증
 
@@ -130,8 +144,9 @@ $kubectl get pv
 $kubectl get pvc
 $kubectl get pods
 ```
-![image](https://github.com/user-attachments/assets/6d9bd82e-414f-4747-8900-07f738c5b20e)
+<img src="https://github.com/user-attachments/assets/6d9bd82e-414f-4747-8900-07f738c5b20e" width="600"/>
 
+<br>
 
 ### 💨 컨테이너 진입 및 데이터 생성
 
@@ -144,8 +159,9 @@ cd /data
 echo "PVC I'M HERE!!!!!!!" > hello.txt
 cat hello.txt
 ```
-![image](https://github.com/user-attachments/assets/3c6c9b9a-7251-42eb-ab92-f3c332f373f4)
+<img src="https://github.com/user-attachments/assets/3c6c9b9a-7251-42eb-ab92-f3c332f373f4" width="600"/>
 
+<br>
 
 ### 💫 Pod 삭제 후 데이터 영속성 확인 
 
@@ -160,8 +176,21 @@ $kubectl apply -f pod.yaml
 $kubectl exec -it busybox-pod -- sh
 $cat /data/hello.txt
 ```
-![image](https://github.com/user-attachments/assets/158b5ecd-eb47-4ad7-9709-f62bf093bb45)
+<img src="https://github.com/user-attachments/assets/158b5ecd-eb47-4ad7-9709-f62bf093bb45" width="600"/>
+
+<br>
+
+✅ 또한, 실제 Node(/mnt/data)에서 데이터가 유지되는지도 확인 가능 <br>
+<img src="https://github.com/user-attachments/assets/364d0acd-290d-4ed3-b54a-35b095bc0366" width="600"/>
+
+<br>
+
+## 🔍 회고
+
+- `hostPath`는 로컬 환경에서만 적절하므로, NFS 또는 동적 프로비저닝(StorageClass) 으로 확장 필요
+- StatefulSet 환경에서의 PVC 활용, Pod 수평 확장 시의 동작 방식도 함께 실습해보면 좋을 것 같음
+- Pod 재기동이 아닌 Node 장애 상황에서도 데이터가 보존되는지에 대한 실험도 필요
 
 
-- Pod가 실제로 위치하고 있는 **Worker Node**(myserver02)에서도 데이터 영속성 확인 가능
-![image](https://github.com/user-attachments/assets/364d0acd-290d-4ed3-b54a-35b095bc0366)
+
+
